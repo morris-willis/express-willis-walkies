@@ -1,38 +1,16 @@
 import "dotenv/config";
 import express from "express";
 import type { NextFunction, Request, Response } from "express";
-import sql from "mssql";
+import {poolPromise, sql} from "./db/connection.ts";
+import authRouter from "./modules/auth/auth.routes.js";
 
 const app = express();
 app.use(express.json());
+app.use("/auth", authRouter);
 
-const dbConfig: sql.config = {
-  user: process.env.AZURE_SQL_USER,
-  password: process.env.AZURE_SQL_PASSWORD,
-  server: process.env.AZURE_SQL_SERVER ?? "",
-  database: process.env.AZURE_SQL_DATABASE,
-  port: 1433,
-  options: {
-    encrypt: true,
-    trustServerCertificate: false,
-  },
-  pool: {
-    max: 10,
-    min: 0,
-    idleTimeoutMillis: 30_000,
-  },
-};
 
-const poolPromise = new sql.ConnectionPool(dbConfig)
-  .connect()
-  .then((pool) => {
-    console.log("Connected to Azure SQL");
-    return pool;
-  })
-  .catch((error: unknown) => {
-    console.error("Azure SQL connection failed:", error);
-    process.exit(1);
-  });
+
+
 
 app.get(
   "/users/:id",
