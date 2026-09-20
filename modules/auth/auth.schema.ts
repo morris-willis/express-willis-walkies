@@ -5,3 +5,12 @@ export const registerSchema = z.object({
   email: z.string().email().max(255),
   password: z.string().min(12).max(128),
 });
+
+export const verifyEmailSchema = z.object({
+  token: z.string().min(1),
+});
+
+export const loginSchema = z.object({
+  email: z.email().max(255),
+  password: z.string().min(1).max(128),
+});

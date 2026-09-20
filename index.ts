@@ -3,9 +3,13 @@ import express from "express";
 import type { NextFunction, Request, Response } from "express";
 import {poolPromise, sql} from "./db/connection.ts";
 import authRouter from "./modules/auth/auth.routes.js";
+import cookieParser from "cookie-parser";
 
 const app = express();
 app.use(express.json());
+app.use(cookieParser());
+
+
 app.use("/auth", authRouter);
 
 
@@ -46,6 +50,8 @@ app.use(
     res.status(500).json({ error: "Internal server error" });
   },
 );
+
+
 
 const port = Number(process.env.PORT) || 3000;
 
