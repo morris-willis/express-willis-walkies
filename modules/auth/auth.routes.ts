@@ -9,7 +9,7 @@ import { authenticate } from "../../middleware/authenticate.js";
 const router = Router();
 
 
-router.get("/me", authenticate, (_req, res) => {
+router.get("/session", authenticate, (_req, res) => {
   return res.json({
     user: res.locals.user,
   });
@@ -176,18 +176,26 @@ router.post("/login", async (req, res, next) => {
         name: string;
         email: string;
         passwordHash: string;
-        role: string;
         emailVerifiedAt: Date | null;
+        roles: string | null;
       }>(`
         SELECT
-          id,
-          name,
-          email,
-          passwordHash,
-          role,
-          emailVerifiedAt
-        FROM dbo.Users
-        WHERE email = @email;
+          u.id,
+          u.name,
+          u.email,
+          u.passwordHash,
+          u.emailVerifiedAt,
+          STRING_AGG(r.name, ',') AS roles
+        FROM dbo.Users AS u
+        LEFT JOIN dbo.UserRoles AS ur ON ur.userId = u.id
+        LEFT JOIN dbo.Roles AS r ON r.id = ur.roleId
+        WHERE u.email = @email
+        GROUP BY
+          u.id,
+          u.name,
+          u.email,
+          u.passwordHash,
+          u.emailVerifiedAt;
       `);
 
     const user = result.recordset[0];
@@ -248,9 +256,42 @@ router.post("/login", async (req, res, next) => {
         id: user.id,
         name: user.name,
         email: user.email,
-        role: user.role,
+        roles: user.roles ? user.roles.split(",") : [],
       },
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post("/logout", async (req, res, next) => {
+  try {
+    const sessionToken = req.cookies.session;
+
+    if (typeof sessionToken === "string") {
+      const tokenHash = createHash("sha256")
+        .update(sessionToken)
+        .digest("hex");
+
+      const pool = await poolPromise;
+
+      await pool
+        .request()
+        .input("tokenHash", sql.Char(64), tokenHash)
+        .query(`
+          DELETE FROM dbo.Sessions
+          WHERE tokenHash = @tokenHash;
+        `);
+    }
+
+    res.clearCookie("session", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
+
+    return res.status(204).send();
   } catch (error) {
     next(error);
   }

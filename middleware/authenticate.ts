@@ -1,12 +1,11 @@
 import type { NextFunction, Request, Response } from "express";
 import { createHash } from "node:crypto";
 import { poolPromise, sql } from "../db/connection.js";
-
 export type AuthenticatedUser = {
   id: number;
   name: string;
   email: string;
-  role: string;
+  roles: string | null;
 };
 
 export async function authenticate(
@@ -34,15 +33,21 @@ export async function authenticate(
       .input("tokenHash", sql.Char(64), tokenHash)
       .query<AuthenticatedUser>(`
         SELECT
-          u.id,
-          u.name,
-          u.email,
-          u.role
-        FROM dbo.Sessions AS s
-        INNER JOIN dbo.Users AS u ON u.id = s.userId
-        WHERE
-          s.tokenHash = @tokenHash
-          AND s.expiresAt > SYSUTCDATETIME();
+        u.id,
+        u.name,
+        u.email,
+        STRING_AGG(r.name, ',') AS roles
+      FROM dbo.Sessions AS s
+      INNER JOIN dbo.Users AS u ON u.id = s.userId
+      LEFT JOIN dbo.UserRoles AS ur ON ur.userId = u.id
+      LEFT JOIN dbo.Roles AS r ON r.id = ur.roleId
+      WHERE
+        s.tokenHash = @tokenHash
+        AND s.expiresAt > SYSUTCDATETIME()
+      GROUP BY
+        u.id,
+        u.name,
+        u.email;
       `);
 
     const user = result.recordset[0];
@@ -53,7 +58,10 @@ export async function authenticate(
       });
     }
 
-    res.locals.user = user;
+    res.locals.user = {
+      ...user,
+      roles: user.roles ? user.roles.split(",") : [],
+    };
     next();
   } catch (error) {
     next(error);
