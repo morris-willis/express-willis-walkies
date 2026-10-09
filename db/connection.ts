@@ -1,5 +1,10 @@
-import "dotenv/config";
 import sql from "mssql";
+import dotenv from "dotenv";
+
+dotenv.config({
+  path: process.env.NODE_ENV === "test" ? ".env.test" : ".env",
+  override: process.env.NODE_ENV === "test",
+});
 
 const dbConfig: sql.config = {
   user: process.env.AZURE_SQL_USER,
