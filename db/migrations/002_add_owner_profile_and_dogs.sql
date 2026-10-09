@@ -1,0 +1,45 @@
+CREATE TABLE dbo.OwnerProfiles (
+  id INT IDENTITY(1,1) NOT NULL
+    CONSTRAINT PK_OwnerProfiles PRIMARY KEY,
+
+  userId INT NOT NULL
+    CONSTRAINT UQ_OwnerProfiles_UserId UNIQUE,
+
+  phoneNumber NVARCHAR(30) NOT NULL,
+
+  addressLine1 NVARCHAR(100) NOT NULL,
+  addressLine2 NVARCHAR(100) NULL,
+  city NVARCHAR(100) NOT NULL,
+  postcode NVARCHAR(20) NOT NULL,
+
+  createdAt DATETIME2 NOT NULL
+    CONSTRAINT DF_OwnerProfiles_CreatedAt DEFAULT (SYSUTCDATETIME()),
+
+  updatedAt DATETIME2 NOT NULL
+    CONSTRAINT DF_OwnerProfiles_UpdatedAt DEFAULT (SYSUTCDATETIME()),
+
+  CONSTRAINT FK_OwnerProfiles_Users
+    FOREIGN KEY (userId)
+    REFERENCES dbo.Users(id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE dbo.Dogs (
+  id INT IDENTITY(1,1) NOT NULL
+    CONSTRAINT PK_Dogs PRIMARY KEY,
+
+  ownerProfileId INT NOT NULL,
+
+  name NVARCHAR(100) NOT NULL,
+  breed NVARCHAR(100) NULL,
+  dateOfBirth DATE NULL,
+  notes NVARCHAR(1000) NULL,
+
+  createdAt DATETIME2 NOT NULL
+    CONSTRAINT DF_Dogs_CreatedAt DEFAULT (SYSUTCDATETIME()),
+
+  CONSTRAINT FK_Dogs_OwnerProfiles
+    FOREIGN KEY (ownerProfileId)
+    REFERENCES dbo.OwnerProfiles(id)
+    ON DELETE CASCADE
+);
