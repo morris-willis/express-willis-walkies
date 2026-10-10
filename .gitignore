@@ -2,3 +2,4 @@
 .env.test
 node_modules
 *.http
+AGENTS.md
