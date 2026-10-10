@@ -54,9 +54,15 @@ export async function createVerifiedOwner(): Promise<TestOwner> {
     );
   }
 
-  const setCookies = loginResponse.headers["set-cookie"] ?? [];
+  const setCookieHeader = loginResponse.headers["set-cookie"];
 
-  const sessionSetCookie = setCookies.find((cookie: string) =>
+  const setCookies = Array.isArray(setCookieHeader)
+    ? setCookieHeader
+    : setCookieHeader
+      ? [setCookieHeader]
+      : [];
+
+  const sessionSetCookie = setCookies.find((cookie) =>
     cookie.startsWith("session="),
   );
 

@@ -78,9 +78,15 @@ describe("authentication", () => {
     expect(loginResponse.status).toBe(200);
     expect(loginResponse.body.user.email).toBe(testEmail);
     expect(loginResponse.body.user.roles).toEqual(["owner"]);
-    const setCookies = loginResponse.headers["set-cookie"] ?? [];
+    const setCookieHeader = loginResponse.headers["set-cookie"];
 
-    const sessionSetCookie = setCookies.find((cookie: string) =>
+    const setCookies = Array.isArray(setCookieHeader)
+      ? setCookieHeader
+      : setCookieHeader
+        ? [setCookieHeader]
+        : [];
+
+    const sessionSetCookie = setCookies.find((cookie) =>
       cookie.startsWith("session="),
     );
 
