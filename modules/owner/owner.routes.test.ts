@@ -392,4 +392,61 @@ describe("Owner Profile Routes", () => {
       if (ownerB) await deleteTestUser(ownerB.email);
     }
   });
+
+  it("allows an owner to clear nullable profile and dog fields", async () => {
+    owner = await createVerifiedOwner();
+
+    const profileResponse = await request(app)
+      .post("/owner/profile")
+      .set("Cookie", owner.sessionCookie)
+      .send({
+        phoneNumber: "07123456789",
+        addressLine1: "1 Test Street",
+        addressLine2: "Flat 2",
+        city: "London",
+        postcode: "SW1A 1AA",
+      });
+
+    expect(profileResponse.status).toBe(201);
+
+    const dogResponse = await request(app)
+      .post("/owner/dogs")
+      .set("Cookie", owner.sessionCookie)
+      .send({
+        name: "Willis",
+        breed: "Labrador",
+        dateOfBirth: "2022-04-15",
+        notes: "Friendly with other dogs",
+      });
+
+    expect(dogResponse.status).toBe(201);
+
+    const clearProfileResponse = await request(app)
+      .patch("/owner/profile")
+      .set("Cookie", owner.sessionCookie)
+      .send({
+        addressLine2: null,
+      });
+
+    const clearDogResponse = await request(app)
+      .patch(`/owner/dogs/${dogResponse.body.dog.id}`)
+      .set("Cookie", owner.sessionCookie)
+      .send({
+        breed: null,
+        dateOfBirth: null,
+        notes: null,
+      });
+
+    expect(clearProfileResponse.status).toBe(200);
+    expect(clearProfileResponse.body.profile.addressLine2).toBeNull();
+
+    expect(clearDogResponse.status).toBe(200);
+    expect(clearDogResponse.body.dog).toMatchObject({
+      id: dogResponse.body.dog.id,
+      name: "Willis",
+      breed: null,
+      dateOfBirth: null,
+      notes: null,
+    });
+  });
 });

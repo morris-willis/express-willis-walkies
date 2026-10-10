@@ -236,19 +236,24 @@ router.patch(
       const result = await pool
         .request()
         .input("userId", sql.Int, userId)
+        .input("hasPhoneNumber", sql.Bit, updates.phoneNumber !== undefined)
         .input("phoneNumber", sql.NVarChar(30), updates.phoneNumber ?? null)
+        .input("hasAddressLine1", sql.Bit, updates.addressLine1 !== undefined)
         .input("addressLine1", sql.NVarChar(100), updates.addressLine1 ?? null)
+        .input("hasAddressLine2", sql.Bit, updates.addressLine2 !== undefined)
         .input("addressLine2", sql.NVarChar(100), updates.addressLine2 ?? null)
+        .input("hasCity", sql.Bit, updates.city !== undefined)
         .input("city", sql.NVarChar(100), updates.city ?? null)
+        .input("hasPostcode", sql.Bit, updates.postcode !== undefined)
         .input("postcode", sql.NVarChar(20), updates.postcode ?? null)
         .query(`
           UPDATE dbo.OwnerProfiles
           SET
-            phoneNumber = COALESCE(@phoneNumber, phoneNumber),
-            addressLine1 = COALESCE(@addressLine1, addressLine1),
-            addressLine2 = COALESCE(@addressLine2, addressLine2),
-            city = COALESCE(@city, city),
-            postcode = COALESCE(@postcode, postcode),
+            phoneNumber = CASE WHEN @hasPhoneNumber = 1 THEN @phoneNumber ELSE phoneNumber END,
+            addressLine1 = CASE WHEN @hasAddressLine1 = 1 THEN @addressLine1 ELSE addressLine1 END,
+            addressLine2 = CASE WHEN @hasAddressLine2 = 1 THEN @addressLine2 ELSE addressLine2 END,
+            city = CASE WHEN @hasCity = 1 THEN @city ELSE city END,
+            postcode = CASE WHEN @hasPostcode = 1 THEN @postcode ELSE postcode END,
             updatedAt = SYSUTCDATETIME()
           OUTPUT
             INSERTED.id,
@@ -298,17 +303,21 @@ router.patch(
         .request()
         .input("dogId", sql.Int, dogId)
         .input("userId", sql.Int, userId)
+        .input("hasName", sql.Bit, updates.name !== undefined)
         .input("name", sql.NVarChar(100), updates.name ?? null)
+        .input("hasBreed", sql.Bit, updates.breed !== undefined)
         .input("breed", sql.NVarChar(100), updates.breed ?? null)
+        .input("hasDateOfBirth", sql.Bit, updates.dateOfBirth !== undefined)
         .input("dateOfBirth", sql.Date, updates.dateOfBirth ?? null)
+        .input("hasNotes", sql.Bit, updates.notes !== undefined)
         .input("notes", sql.NVarChar(1000), updates.notes ?? null)
         .query(`
           UPDATE d
           SET
-            name = COALESCE(@name, d.name),
-            breed = COALESCE(@breed, d.breed),
-            dateOfBirth = COALESCE(@dateOfBirth, d.dateOfBirth),
-            notes = COALESCE(@notes, d.notes)
+            name = CASE WHEN @hasName = 1 THEN @name ELSE d.name END,
+            breed = CASE WHEN @hasBreed = 1 THEN @breed ELSE d.breed END,
+            dateOfBirth = CASE WHEN @hasDateOfBirth = 1 THEN @dateOfBirth ELSE d.dateOfBirth END,
+            notes = CASE WHEN @hasNotes = 1 THEN @notes ELSE d.notes END
           OUTPUT
             INSERTED.id,
             INSERTED.name,

@@ -17,6 +17,9 @@ export const createDogSchema = z.object({
 
 export const updateOwnerProfileSchema = createOwnerProfileSchema
   .partial()
+  .extend({
+    addressLine2: z.string().trim().max(100).nullable().optional(),
+  })
   .refine(
     (data) => Object.values(data).some((value) => value !== undefined),
     { message: "Provide at least one field to update" },
@@ -24,6 +27,11 @@ export const updateOwnerProfileSchema = createOwnerProfileSchema
 
 export const updateDogSchema = createDogSchema
   .partial()
+  .extend({
+    breed: z.string().trim().max(100).nullable().optional(),
+    dateOfBirth: z.string().date().nullable().optional(),
+    notes: z.string().trim().max(1000).nullable().optional(),
+  })
   .refine(
     (data) => Object.values(data).some((value) => value !== undefined),
     { message: "Provide at least one field to update" },
